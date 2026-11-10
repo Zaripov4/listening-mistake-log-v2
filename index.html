@@ -165,6 +165,8 @@ dialog::backdrop{background:rgba(10,15,22,.6)}
 .dbody{padding:20px}
 .dtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .dtop .step{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+.dtop .step{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-right:10px}
+.dtop .close{flex:none}
 label{display:block;font-weight:700;margin:12px 0 6px}
 label small{font-weight:400;color:var(--mute)}
 .hint{color:var(--mute);font-size:14px;margin:-2px 0 8px}
@@ -341,6 +343,254 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 </dialog>
 
 <script>
+/* ==REASONS== */
+// ---------- question banks for the practice games ----------
+// two-option item: right answer first (options are shuffled on screen)
+const two = (q, right, wrong, w, t) => ({t, q, o:[right, wrong], a:0, w});
+const BANK = {};
+
+BANK.spell = [
+  ["accommodation","accomodation","Double c, double m: a-cc-o-mm-odation."],
+  ["necessary","neccessary","One c, double s: ne-c-e-ss-ary."],
+  ["Wednesday","Wensday","Silent d: Wed-nes-day."],
+  ["February","Febuary","Don't forget the first r: Feb-r-uary."],
+  ["environment","enviroment","Don't forget the n: enviro-n-ment."],
+  ["receive","recieve","After c, it's e then i: rec-ei-ve."],
+  ["library","libary","Two r's: li-b-r-a-r-y."],
+  ["government","goverment","govern + ment."],
+  ["separate","seperate","There's “a rat” in sep-a-rate."],
+  ["definitely","definately","It comes from finite: defin-i-tely."],
+  ["restaurant","restaraunt","rest-au-rant."],
+  ["beginning","begining","Double n: begi-nn-ing."],
+  ["business","buisness","bus-i-ness."],
+  ["committee","commitee","Double m, double t, double e."],
+  ["guarantee","garantee","g-u-a-rantee."],
+  ["temperature","temprature","tem-per-a-ture."],
+  ["vegetable","vegtable","veg-e-table."],
+  ["address","adress","Double d, double s."],
+  ["calendar","calender","It ends with -ar."],
+  ["colleague","collegue","coll-ea-gue."],
+  ["convenient","convinient","con-ve-nient."],
+  ["embarrassed","embarassed","Double r, double s."],
+  ["exercise","excercise","No c after the x."],
+  ["foreign","foriegn","for-ei-gn."],
+  ["immediately","immediatly","immediate + ly."],
+  ["independent","independant","It ends with -ent."],
+  ["knowledge","knowlege","know + ledge."],
+  ["opportunity","oportunity","Double p."],
+  ["questionnaire","questionaire","Double n."],
+  ["recommend","reccommend","One c, double m."],
+  ["successful","succesful","Double c, double s, one l at the end."],
+  ["tomorrow","tommorow","One m, double r."],
+  ["until","untill","Only one l."],
+  ["equipment","equiptment","No t after the p."],
+  ["receipt","reciept","Silent p: rec-ei-pt."],
+  ["Saturday","Saterday","Sat-ur-day."],
+  ["Thursday","Thurday","Thur-s-day."],
+  ["comfortable","comfortible","comfort + able."],
+  ["medicine","medecine","med-i-cine."],
+  ["occasionally","occassionally","Double c, one s."],
+  ["beautiful","beatiful","b-eau-tiful."],
+  ["different","diffrent","dif-fer-ent."],
+  ["interesting","intresting","in-ter-est-ing."],
+  ["category","catagory","cat-e-gory."],
+  ["advertisement","advertisment","advertise + ment."],
+  ["entrance","enterance","en-trance: no e in the middle."],
+  ["August","Agust","Au-gust."],
+  ["museum","musuem","mus-e-um."],
+  ["science","sience","s-c-ience."]
+].map(([r,w,tip]) => two("Which spelling is right?", r, w, tip)).concat([
+  two("“The library is very ___.” (no noise)", "quiet", "quite", "quiet = no noise. quite = fairly."),
+  two("“What will you ___ to the party?”", "wear", "where", "wear = put on clothes. where = what place."),
+  two("“Check the ___ before you go.” (sun, rain…)", "weather", "whether", "weather = sun, rain. whether = if."),
+  two("“They left ___ bags on the bus.”", "their", "there", "their = belongs to them."),
+  two("“The ___ was very cheap.” (money you pay)", "fare", "fair", "fare = the price of a ticket."),
+  two("“Turn ___ at the bank.”", "right", "write", "right = direction. write = with a pen.")
+]);
+
+BANK.s = [
+  ["Bring two ___ to the class.","photo","photos",1,"two = many."],
+  ["There is a ___ near the station.","car park","car parks",0,"a = one."],
+  ["Visitors can hire several ___.","bike","bikes",1,"several = many."],
+  ["Each ___ costs £5.","ticket","tickets",0,"each = one."],
+  ["The course has three ___ a week.","lecture","lectures",1,"three = many."],
+  ["Many ___ come in summer.","tourist","tourists",1,"many = more than one."],
+  ["There are a few ___ left.","seat","seats",1,"a few = more than one."],
+  ["Every ___ gets a free map.","visitor","visitors",0,"every + one thing."],
+  ["The hotel has 40 ___.","room","rooms",1,"40 = many."],
+  ["Both ___ are closed on Monday.","shop","shops",1,"both = two."],
+  ["A number of ___ were damaged.","boat","boats",1,"a number of = many."],
+  ["There's only one ___ in the village.","school","schools",0,"one."],
+  ["Most ___ live on campus.","student","students",1,"most = many."],
+  ["Each group needs a ___.","leader","leaders",0,"a = one."],
+  ["Children under 12 need an ___ with them.","adult","adults",0,"an = one."],
+  ["The tour includes two ___.","meal","meals",1,"two = many."],
+  ["Don't forget your ___ boots.","walking","walkings",0,"A word before a noun doesn't take -s."],
+  ["The price includes all ___.","lesson","lessons",1,"all = many."],
+  ["There's a ___ at the end of the corridor.","lift","lifts",0,"a = one."],
+  ["Some ___ are not suitable for children.","film","films",1,"some + are = many."],
+  ["The ___ is open until 10 pm.","pool","pools",0,"is = one."],
+  ["The ___ are next to the café.","toilet","toilets",1,"are = many."],
+  ["You'll need to bring a ___.","towel","towels",0,"a = one."],
+  ["We sell ___ and maps at the desk.","postcard","postcards",1,"Things you sell in general = many."],
+  ["The club meets on ___ and Fridays.","Tuesday","Tuesdays",1,"Every week = many Tuesdays."]
+].map(([s,a,b,k,w]) => ({q:`“${s}”`, o:[a,b], a:k, w}));
+
+BANK.trick = [
+  ["Let's meet at 6. Actually, no, I finish work late, so let's say 7.","What time will they meet?","7","6","“Actually, no” changed it."],
+  ["My surname is Smith. Oh sorry, that's my old name. It's Jones now.","What is her surname?","Jones","Smith","“Oh sorry” = the first answer was wrong."],
+  ["We thought about the museum, but it's closed on Mondays, so we'll go to the park.","Where will they go?","the park","the museum","“but” changed the plan."],
+  ["The fee used to be £20, but it went up last month to £25.","How much is the fee now?","£25","£20","“used to be” = the old price."],
+  ["You're in room 12… no, wait, they've moved you to room 21.","Which room?","21","12","“no, wait” = changed."],
+  ["I'd love to take the train, but it's too slow, so I'm flying.","How will he travel?","by plane","by train","“but” = the train is out."],
+  ["The class is usually on Thursday, but this week it's on Friday.","When is the class this week?","Friday","Thursday","“usually” ≠ this week."],
+  ["Most people choose the blue room, but I'd recommend the green one for you.","Which room does she recommend?","green","blue","What most people do ≠ her advice."],
+  ["I was going to bring a salad, but Sam's doing that, so I'll make a cake.","What will she bring?","a cake","a salad","“was going to” = changed."],
+  ["The bus used to leave at quarter past, but now it leaves at half past.","When does the bus leave now?","half past","quarter past","“used to” = old information."],
+  ["We'd planned for 30 people, but now it looks more like 45.","How many people?","45","30","“now it looks more like” = updated."],
+  ["It's on the second floor. Oh, no, they moved it to the third last year.","Which floor?","third","second","“Oh, no” corrected it."],
+  ["Is that Cate with a C? No, with a K: K-A-T-E.","What is her name?","Kate","Cate","“No, with a K”."],
+  ["The bus is cheapest, but the coach is much faster, so let's book that.","What will they book?","the coach","the bus","“so let's book that” = the coach."],
+  ["At first I wanted the morning course, but I can't get there before 10, so I'll do the afternoon one.","Which course?","afternoon","morning","“At first” = it changed later."],
+  ["The talk was going to be about birds, but the speaker is ill, so it's about insects now.","What is the talk about?","insects","birds","“was going to be” = changed."],
+  ["Many people think the castle is the oldest building, but actually it's the church.","What is the oldest building?","the church","the castle","“but actually” = the real answer."],
+  ["You can pay by card. Oh, sorry, the machine's broken today, so it's cash only.","How can you pay today?","cash","card","“sorry… broken” = card is out."],
+  ["Parking was free, but they started charging £3 last month.","How much is parking now?","£3","free","“was free” = old information."],
+  ["I'll need it by Friday. Hmm, actually, Wednesday would be better.","When does he need it?","Wednesday","Friday","“actually” = changed."],
+  ["Everyone says the sea view room is best, but I prefer the garden view. I'll take that one.","Which room will he take?","garden view","sea view","What everyone says ≠ his choice."],
+  ["The meeting point is the main gate. Sorry, I mean the side gate, the main one's closed.","Where do they meet?","side gate","main gate","“Sorry, I mean” corrected it."]
+].map(([t,q,r,w,why]) => two(q, r, w, why, `“${t}”`));
+
+BANK.diff = [
+  ["cheap","it doesn't cost much","it costs a lot"],["arrival date","the day you get here","the day you leave"],
+  ["advantage","the good thing is…","the problem is…"],["compulsory","you have to do it","you can choose"],
+  ["nearby","just around the corner","miles away"],["begin","get started","finish off"],
+  ["free of charge","you don't have to pay","you pay extra"],["fully booked","there's no space left","there's lots of space"],
+  ["optional","it's up to you","everyone must"],["frequently","quite often","hardly ever"],
+  ["reduce","cut down","go up"],["postpone","put it off","bring it forward"],
+  ["cancel","call it off","set it up"],["good value","not expensive for what you get","overpriced"],
+  ["crowded","packed with people","almost empty"],["purchase","buy","sell"],
+  ["accommodation","somewhere to stay","something to eat"],["occupation","job","hobby"],
+  ["children","kids","adults"],["elderly people","older people","teenagers"],
+  ["deadline","the last day to hand it in","the first day of the course"],["unsuitable","not right for","perfect for"],
+  ["dangerous","not safe","very safe"],["recently","not long ago","many years ago"],
+  ["approximately","about","exactly"],["disadvantage","the downside","the benefit"],
+  ["refund","get your money back","pay again"],["essential","you really need it","you don't need it"],
+  ["return ticket","there and back","one way only"],["enquire","ask about","complain about"],
+  ["assist","help","stop"],["at the moment","right now","next year"],
+  ["a quarter","25%","40%"],["half","50%","15%"],
+  ["twice a week","two times a week","every two weeks"],["weekly","once a week","once a month"],
+  ["annual","every year","every day"],["tiny","really small","enormous"],
+  ["anxious","worried","relaxed"],["satisfied","happy with it","disappointed"]
+].map(([w,r,x]) => two(`The question says “${w}”. The speaker might say…`, r, x, `${w} = ${r}.`));
+
+BANK.lost = [
+  two("You missed Q12. The speaker is now on Q13. What do you do?","Move on to Q13, guess Q12 at the end","Keep thinking about Q12","If you stay on Q12, you'll miss Q13 too."),
+  two("There's a 30-second break. What's best?","Read the next questions","Check your old answers","Reading ahead tells you what to listen for."),
+  two("While listening for Q7, you should also watch…","Q8","Q20","Watch the next question so you know when Q7 has passed."),
+  two("You can't focus for a whole test yet. Start with…","one Part at a time","three full tests in a row","Build focus step by step."),
+  two("Can you leave an answer empty?","No, always guess","Yes, it's safer","An empty answer is always wrong. A guess might be right."),
+  two("You hear the answer to Q9, but you're still waiting for Q8. What happened?","Q8 has passed. Guess it later.","Q8 will come later.","Answers come in order. If Q9 came, Q8 is gone."),
+  two("Before Part 2 starts, you should…","read Part 2's questions and underline key words","rest your eyes","Use every second to read ahead."),
+  two("The speaker says “Now let's move on to…”. This usually means…","a new topic or question group","the test is ending","Signpost words tell you where you are."),
+  two("Your mind wanders for a second. Best move?","Find the next question's key words and listen for them","Try to remember what you missed","Catch the next answer, don't chase the old one."),
+  two("Which words help you follow where you are?","first, next, after that, finally","um, er, well","These signpost words show the speaker moving on."),
+  two("In a form or table, the answers usually come…","in order","in a random order","Listening answers follow the order of the questions."),
+  two("Q14 and Q15 are about the same topic. What should you do?","Watch both at the same time","Only look at Q14","The answers can come close together.")
+];
+
+BANK.words = [
+  ["NO MORE THAN TWO WORDS","old bridge","the old bridge","“the” counts: 3 words."],
+  ["ONE WORD ONLY","garden","a garden","“a garden” is two words."],
+  ["NO MORE THAN TWO WORDS","fresh fruit","fresh and tasty fruit","Count every word, even “and”."],
+  ["ONE WORD AND/OR A NUMBER","15 dollars","about 15 dollars","“about” makes it too long."],
+  ["ONE WORD ONLY","Tuesday","next Tuesday","“next Tuesday” is two words."],
+  ["NO MORE THAN TWO WORDS","city centre","the city centre","“the” counts: 3 words."],
+  ["NO MORE THAN THREE WORDS","new sports centre","a new sports centre","“a” counts: 4 words."],
+  ["ONE WORD ONLY","passport","passport photo","“passport photo” is two words."],
+  ["NO MORE THAN TWO WORDS","river bank","the bank of the river","That's 5 words."],
+  ["ONE WORD ONLY","bicycle","a bicycle","“a” counts."],
+  ["NO MORE THAN TWO WORDS","guided tour","a guided tour","“a” counts: 3 words."],
+  ["ONE WORD ONLY","noise","loud noise","Two words."],
+  ["NO MORE THAN TWO WORDS","car park","the car park","“the” counts: 3 words."],
+  ["NO MORE THAN TWO WORDS","swimming pool","an outdoor swimming pool","That's 4 words."],
+  ["ONE WORD ONLY","history","history lessons","Two words."],
+  ["NO MORE THAN THREE WORDS","plastic bottles","lots of plastic bottles","That's 4 words."],
+  ["ONE WORD AND/OR A NUMBER","25 students","about 25 students","“about” makes it too long."],
+  ["NO MORE THAN TWO WORDS","warm clothes","some warm clothes","“some” counts: 3 words."]
+].map(([lim,ok,bad,w]) => two(`${lim}. Which answer is OK?`, ok, bad, w)).concat(
+  [["bus and train",3],["the city centre",3],["red and yellow",3],["swimming pool",2],["a map",2],
+   ["fresh fruit and vegetables",4],["health centre",2],["the old town hall",4]]
+  .map(([p,n]) => ({q:`How many words is “${p}”?`, o:[String(n-1),String(n),String(n+1)], a:1, keep:true, w:`${p.split(" ").join(" + ")} = ${n}. Little words count too.`})));
+
+BANK.new = [
+  ["The trip is compulsory, so every student must go.","compulsory","you must do it","you can choose"],
+  ["The hall is spacious. There's room for 500 people.","spacious","big","small"],
+  ["Tickets are scarce, so book early. There are only a few left.","scarce","hard to find","cheap"],
+  ["The bridge was renovated, so now it looks brand new.","renovated","repaired and improved","closed forever"],
+  ["She was reluctant to speak. She really didn't want to.","reluctant","not wanting to","excited to"],
+  ["The food was bland. It had no taste at all.","bland","without much taste","very spicy"],
+  ["The path is steep, so you'll be climbing most of the way.","steep","going up sharply","flat"],
+  ["The museum is vast. You need a whole day to see it.","vast","very big","very old"],
+  ["Entry is free, but a donation is welcome. Just give what you like.","donation","money you give to help","a fine"],
+  ["The flight was delayed, so we left three hours late.","delayed","late","cancelled"],
+  ["The water is shallow here, so even kids can stand up.","shallow","not deep","very cold"],
+  ["He's very punctual. He's never late.","punctual","on time","friendly"],
+  ["The rules are flexible. You can change your plan if you need to.","flexible","easy to change","very strict"],
+  ["The village is remote. The nearest shop is 50 km away.","remote","far from other places","crowded"],
+  ["The beach was deserted. We didn't see anyone all day.","deserted","empty","dirty"],
+  ["Buy durable shoes. They need to last for years.","durable","strong, lasts a long time","fashionable"],
+  ["Fees vary. Some courses cost £50, others £300.","vary","are different","are all the same"],
+  ["The lecture was tedious. Half the students fell asleep.","tedious","boring","exciting"],
+  ["Please be cautious near the cliffs. Some parts are loose.","cautious","careful","fast"],
+  ["The room is adjacent to the kitchen, right next door.","adjacent to","next to","far from"],
+  ["The test is mandatory for all new staff. Nobody can skip it.","mandatory","required","optional"],
+  ["The weather is unpredictable here. It can change in minutes.","unpredictable","hard to know in advance","always sunny"],
+  ["Please write legibly. We must be able to read it.","legibly","clearly, easy to read","quickly"]
+].map(([t,w,r,x]) => two(`${w} = ?`, r, x, "The words around it give you the meaning.", `“${t}”`));
+
+BANK.fast = [13,14,15,16,17,18,19].flatMap(n => {
+  const teen = ["thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"][n-13], ty = (n-10)*10;
+  return [
+    {q:`The strong part is at the END: ${teen.slice(0,-4)}-TEEN. The number is…`, o:[String(n), String(ty)], a:0, keep:true, w:"-TEEN numbers are stressed at the end."},
+    {q:`The strong part is at the START: ${["THIR","FOR","FIF","SIX","SEVEN","EIGH","NINE"][n-13]}-ty. The number is…`, o:[String(n), String(ty)], a:1, keep:true, w:"-TY numbers are stressed at the start."}];
+}).concat([
+  ["gonna","going to","got to"],["wanna","want to","went to"],["gotta","got to / have to","go to"],["lemme","let me","lend me"],
+  ["dunno","don't know","do now"],["gimme","give me","get me"],["kinda","kind of","can't do"],["outta","out of","out to"],
+  ["whaddya","what do you","what did he"],["hafta","have to","half a"],["sorta","sort of","sort out"],["didja","did you","do you"]
+].map(([h,r,x]) => two(`You hear “${h}”. It means…`, r, x, `${h} = ${r}.`)), [
+  ["“double seven”","77","27"],["“triple five”","555","35"],["“oh-seven-one”","071","171"],
+  ["“a quarter past six”","6:15","6:45"],["“a quarter to nine”","8:45","9:15"],["“half past four”","4:30","3:30"],
+  ["“twenty to ten”","9:40","10:20"],["“nineteen ninety-eight”","1998","1918"],["“two thousand and five”","2005","2500"],
+  ["“the twenty-third of May”","23 May","3 May"]
+].map(([h,r,x]) => two(`You hear ${h}. You write…`, r, x, `${h} = ${r}.`)), [
+  ["“double-u”","W","U"],["“gee”","G","J"],["“jay”","J","G"],["“aitch”","H","A"],
+  ["“why”","Y","I"],["“ee”","E","I"],["“eye”","I","E"],["“ar”","R","A"]
+].map(([h,r,x]) => two(`You hear the letter ${h}. It's…`, r, x, `${h} = ${r}.`)));
+
+BANK.map = [
+  ["Walk in and go straight to the end of the path. It's right in front of you.","B"],
+  ["As you come in, it's the first building on your left.","F"],
+  ["As you come in, it's the first building on your right.","G"],
+  ["It's on your left, halfway along the path.","D"],
+  ["It's on your right, halfway along the path.","E"],
+  ["It's in the top left corner.","A"],["It's in the top right corner.","C"],
+  ["It's in the bottom left corner, next to the entrance.","F"],["It's in the bottom right corner, next to the entrance.","G"],
+  ["Go to the end of the path and turn left. It's the building in the corner.","A"],
+  ["Go to the end of the path and turn right. It's the building in the corner.","C"],
+  ["It's opposite D, on the other side of the path.","E"],["It's opposite E, on the other side of the path.","D"],
+  ["It's opposite F, across the path.","G"],["It's opposite G, across the path.","F"],
+  ["It's between A and F.","D"],["It's between C and G.","E"],["It's between A and C.","B"],
+  ["It's just north of D.","A"],["It's just south of E.","G"],["It's just west of B.","A"],["It's just east of B.","C"],
+  ["Start at F and go clockwise around the edge. It's the next building.","D"],
+  ["Start at A and go clockwise around the edge. It's the next building.","B"],
+  ["Start at C and go clockwise around the edge. It's the next building.","E"],
+  ["Start at A and go anticlockwise around the edge. It's the next building.","D"],
+  ["Start at G and go anticlockwise around the edge. It's the next building.","E"]
+].map(([d,ans]) => { const L = "ABCDEFG", i = L.indexOf(ans), o = [ans, L[(i+2)%7], L[(i+4)%7]].sort();
+  return {pic:mapHTML(), q:`“${d}”`, o, a:o.indexOf(ans), keep:true, w:`The answer is ${ans}. Follow it on the map with your finger.`}; })
+  .concat([{q:"Which way is clockwise?", o:["↻","↺"], a:0, keep:true, w:"Clockwise = the way a clock's hands move ↻."}]);
+
 const REASONS = [
   {e:"✍️", name:"Spelling", hint:"I heard it but wrote it wrong",
    why:"You had the right word, but the spelling was wrong.",
@@ -350,15 +600,7 @@ const REASONS = [
         <div class="cap">Double letters · silent letters · Capital Letters</div>`,
    steps:["📓 Write every misspelled word in a notebook","🔁 Test yourself once a week","🔠 Days, months and names start with a capital"],
    more:"Watch words that sound the same (quite/quiet). British and American spellings are both accepted.",
-   drill:[
-    {q:"Which spelling is right?", o:["accommodation","accomodation"], a:0, w:"Double c and double m: a-cc-o-mm-odation."},
-    {q:"Which spelling is right?", o:["Wensday","Wednesday"], a:1, w:"There's a silent d: Wed-nes-day."},
-    {q:"Which spelling is right?", o:["neccessary","necessary"], a:1, w:"One c, two s: ne-c-e-ss-ary."},
-    {q:"Which spelling is right?", o:["Febuary","February"], a:1, w:"Don't forget the first r: Feb-r-uary."},
-    {q:"Which spelling is right?", o:["environment","enviroment"], a:0, w:"Don't forget the n: enviro-N-ment."},
-    {q:"Which spelling is right?", o:["recieve","receive"], a:1, w:"After c, it's e then i: rec-ei-ve."},
-    {q:"“The library is very ___.” (no noise)", o:["quiet","quite"], a:0, w:"quiet = no noise. quite = fairly."},
-    {q:"Which spelling is right?", o:["library","libary"], a:0, w:"Two r's: li-b-r-a-r-y."}]},
+   drill:BANK.spell},
   {e:"🔢", name:"Missing -s", hint:"One thing or many? I got it wrong",
    why:"The word was right, but the -s (one thing or many) was wrong.",
    short:"One or many? Look at the word before the gap.",
@@ -367,13 +609,7 @@ const REASONS = [
         <div class="cap">a, an, each = one · two, many, several = many</div>`,
    steps:["👀 Look before the gap: a, each, two, many","🧠 Predict: one thing or many?","✅ Check every -s at the end"],
    more:"Before the audio, predict what the gap needs: a noun, verb or adjective? Your answer must fit the sentence.",
-   drill:[
-    {q:"“Bring two ___ to the class.”", o:["photo","photos"], a:1, w:"two = many → photos."},
-    {q:"“There is a ___ near the station.”", o:["car park","car parks"], a:0, w:"a = one → car park."},
-    {q:"“Visitors can hire several ___.”", o:["bike","bikes"], a:1, w:"several = many → bikes."},
-    {q:"“Each ___ costs £5.”", o:["ticket","tickets"], a:0, w:"each = one → ticket."},
-    {q:"“The course has three ___ a week.”", o:["lecture","lectures"], a:1, w:"three = many → lectures."},
-    {q:"“You'll need an ___ form.”", o:["application","applications"], a:0, w:"an = one → application."}]},
+   drill:BANK.s},
   {e:"🪤", name:"Trick answer", hint:"The speaker said it, then changed it",
    why:"The speaker said your answer too, but then changed it. This is a trap.",
    short:"The first answer you hear is often changed.",
@@ -381,13 +617,7 @@ const REASONS = [
         <div class="vrow" style="margin-top:8px"><span class="ch bad">Monday ❌</span><span class="ch ok">Tuesday ✅</span></div>`,
    steps:["👂 Listen for: but, actually, sorry, oh no","⏳ Multiple choice: wait until every option is talked about"],
    more:"In multiple choice the speakers usually talk about every option. Tick the one you think is right, but keep listening until they have discussed them all.",
-   drill:[
-    {t:"“Let's meet at 6. Actually, no, I finish work late, so let's say 7.”", q:"What time will they meet?", o:["6","7"], a:1, w:"“Actually, no” changed it to 7."},
-    {t:"“My surname is Smith. Oh sorry, that's my old name. It's Jones now.”", q:"What is her surname?", o:["Smith","Jones"], a:1, w:"“Oh sorry” = the first answer was wrong."},
-    {t:"“We thought about the museum, but it's closed on Mondays, so we'll go to the park.”", q:"Where will they go?", o:["museum","park"], a:1, w:"“but” changed the plan."},
-    {t:"“The fee used to be £20, but it went up last month to £25.”", q:"How much is the fee now?", o:["£20","£25"], a:1, w:"“used to be” = old. The fee now is £25."},
-    {t:"“You're in room 12… no, wait, they've moved you to room 21.”", q:"Which room?", o:["12","21"], a:1, w:"“no, wait” = changed."},
-    {t:"“I'd love to take the train, but it's too slow, so I'm flying.”", q:"How will he travel?", o:["by train","by plane"], a:1, w:"“but” = the train is out."}]},
+   drill:BANK.trick},
   {e:"🔁", name:"Different words", hint:"They said it with other words",
    why:"The speaker said the answer with different words from the question, so you didn't notice it.",
    short:"The question and the speaker use different words.",
@@ -396,13 +626,7 @@ const REASONS = [
         <div class="cap">📄 = question · 🗣️ = speaker</div>`,
    steps:["✏️ Underline 2 key words in the question","💭 Think: how else can they say it?","📋 After the test, write the pairs in a list"],
    more:"In multiple choice, underline what makes each option different.",
-   drill:[
-    {q:"The question says “cheap”. The speaker might say…", o:["it doesn't cost much","it costs a lot"], a:0, w:"cheap = doesn't cost much."},
-    {q:"The question says “arrival date”. The speaker might say…", o:["the day you get here","the day you leave"], a:0, w:"arrive = get here."},
-    {q:"The question says “advantage”. The speaker might say…", o:["the good thing is…","the problem is…"], a:0, w:"advantage = a good thing."},
-    {q:"The question says “compulsory”. The speaker might say…", o:["you have to do it","you can choose"], a:0, w:"compulsory = you must."},
-    {q:"The question says “nearby”. The speaker might say…", o:["just around the corner","miles away"], a:0, w:"nearby = close."},
-    {q:"The question says “begin”. The speaker might say…", o:["get started","finish off"], a:0, w:"begin = get started."}]},
+   drill:BANK.diff},
   {e:"🧭", name:"Got lost", hint:"I lost my place or stopped focusing",
    why:"You lost your place, or your mind wandered, and the answer went past.",
    short:"Watch two questions at once. Missed one? Move on.",
@@ -411,12 +635,7 @@ const REASONS = [
         <div class="vrow"><span class="ch bad">Missed Q5? 😬</span><span class="ar">→</span><span class="ch ok">⏭️ Go to Q6, guess Q5 later</span></div>`,
    steps:["👀 Watch this question AND the next one","⏭️ Missed it? Let it go, guess at the end","📖 Use the breaks to read the next questions"],
    more:"Build focus step by step: practise one Part at a time, then two, then a full test.",
-   drill:[
-    {q:"You missed Q12. The speaker is now on Q13. What do you do?", o:["Keep thinking about Q12","Move on to Q13, guess Q12 at the end"], a:1, w:"If you stay on Q12, you'll miss Q13 too."},
-    {q:"There's a 30-second break. What's best?", o:["Read the next questions","Check your old answers"], a:0, w:"Reading ahead helps you know what to listen for."},
-    {q:"While listening for Q7, you should also watch…", o:["Q8","Q20"], a:0, w:"Watch the next question so you know when Q7 has passed."},
-    {q:"You can't focus for a whole test yet. Start with…", o:["One Part at a time","Three full tests in a row"], a:0, w:"Build focus step by step."},
-    {q:"Can you leave an answer empty?", o:["Yes, it's safer","No, always guess"], a:1, w:"An empty answer is always wrong. A guess might be right."}]},
+   drill:BANK.lost},
   {e:"📏", name:"Too many words", hint:"Broke the word limit or format",
    why:"You wrote more words than allowed, or the wrong form.",
    short:"Read the word limit first. Circle it.",
@@ -424,12 +643,7 @@ const REASONS = [
         <div class="vrow"><span class="ch ok">city centre ✅</span><span class="ch bad">the city centre ❌</span></div>`,
    steps:["⭕ Circle the rule, e.g. ONE WORD AND/OR A NUMBER","✍️ Check dates, times and numbers"],
    more:"Check dates, times and numbers are written the right way.",
-   drill:[
-    {q:"NO MORE THAN TWO WORDS. Which is OK?", o:["the old bridge","old bridge"], a:1, w:"“the old bridge” is three words."},
-    {q:"ONE WORD ONLY. Which is OK?", o:["garden","a garden"], a:0, w:"“a garden” is two words."},
-    {q:"NO MORE THAN TWO WORDS. Which is OK?", o:["fresh fruit","fresh and tasty fruit"], a:0, w:"Count every word, even and."},
-    {q:"ONE WORD AND/OR A NUMBER. Which is OK?", o:["15 dollars","about 15 dollars"], a:0, w:"“about” makes it too long."},
-    {q:"How many words is “bus and train”?", o:["2","3"], a:1, w:"“and” counts too."}]},
+   drill:BANK.words},
   {e:"📚", name:"New word", hint:"I didn't know this word",
    why:"The answer used a word you didn't know yet.",
    short:"Guess from the sentence first, then check.",
@@ -438,12 +652,7 @@ const REASONS = [
         <div class="vrow"><span class="ch ok">💡 spacious = big</span></div>`,
    steps:["🔍 Guess the meaning from the words around it","📓 Notebook: the word + the sentence you heard","🔁 Review it every week"],
    more:"Write the pronunciation too. Part 4 lectures use more academic words, so listen to talks and podcasts on academic topics.",
-   drill:[
-    {t:"“The trip is compulsory, so every student must go.”", q:"compulsory = ?", o:["you must do it","you can choose"], a:0, w:"“every student must go” gives the clue."},
-    {t:"“The hall is spacious. There's room for 500 people.”", q:"spacious = ?", o:["big","small"], a:0, w:"Room for 500 people = big."},
-    {t:"“Tickets are scarce, so book early. There are only a few left.”", q:"scarce = ?", o:["hard to find","cheap"], a:0, w:"“only a few left” = scarce."},
-    {t:"“The bridge was renovated, so now it looks brand new.”", q:"renovated = ?", o:["repaired and improved","closed forever"], a:0, w:"“looks brand new” gives the clue."},
-    {t:"“She was reluctant to speak. She really didn't want to.”", q:"reluctant = ?", o:["not wanting to","excited to"], a:0, w:"“didn't want to” = reluctant."}]},
+   drill:BANK.new},
   {e:"⚡", name:"Too fast", hint:"Words ran together or the accent was hard",
    why:"You heard the answer, but the words ran together or the accent was hard to follow.",
    short:"Replay it until you can hear every word.",
@@ -452,27 +661,14 @@ const REASONS = [
         <div class="cap">Strong part at the end = -teen · at the start = -ty</div>`,
    steps:["🔁 Replay the sentence 5–10 times","✂️ Split it into words, then check the transcript","🌍 Listen to many accents"],
    more:"Practise numbers that sound alike (13/30, 14/40, 15/50) and letters (B, D, E, G, P, T). Listen to British, Australian, American, Canadian and New Zealand accents.",
-   drill:[
-    {q:"You hear “gonna”. It means…", o:["going to","got to"], a:0, w:"gonna = going to."},
-    {q:"You hear “wanna”. It means…", o:["want to","went to"], a:0, w:"wanna = want to."},
-    {q:"The strong part is at the END: fif-TEEN. The number is…", o:["15","50"], a:0, w:"-TEEN numbers are stressed at the end."},
-    {q:"The strong part is at the START: FOR-ty. The number is…", o:["14","40"], a:1, w:"-ty numbers are stressed at the start."},
-    {q:"You hear “lemme”. It means…", o:["let me","lend me"], a:0, w:"lemme = let me."},
-    {q:"You hear “dunno”. It means…", o:["don't know","do now"], a:0, w:"dunno = don't know."},
-    {q:"You hear “gotta go”. It means…", o:["have to go","got a goal"], a:0, w:"gotta = got to = have to."}]},
+   drill:BANK.fast},
   {e:"🗺️", name:"Map directions", hint:"I got lost on the map",
    why:"You lost track of where the speaker was on the map, or a direction word confused you.",
    short:"Find the start, then follow with your pencil.",
    pic:`${mapHTML()}<div class="vrow" style="margin-top:8px"><span class="ch">opposite</span><span class="ch">next to</span><span class="ch">behind</span><span class="ch">just past</span><span class="ch">↻ clockwise</span></div>`,
    steps:["📍 Find where the speaker starts","✏️ Move your pencil as they talk","🧭 Learn the direction words"],
    more:"Also learn: in front of, at the top/bottom, on the corner, turn left/right.",
-   drill:[
-    {pic:mapHTML(), q:"“Walk in and go straight to the end of the path. The library is right in front of you.”", o:["A","B","C"], a:1, keep:true, w:"Straight ahead at the end of the path = B."},
-    {pic:mapHTML(), q:"“As you come in, the café is the first building on your left.”", o:["D","F","G"], a:1, keep:true, w:"Facing north from the entrance, left is west = F."},
-    {pic:mapHTML(), q:"“The shop is opposite the café, on the other side of the path.” (The café is F.)", o:["C","E","G"], a:2, keep:true, w:"Opposite F, across the path = G."},
-    {pic:mapHTML(), q:"“The gym is in the top left corner.”", o:["A","C","F"], a:0, keep:true, w:"Top left = A."},
-    {pic:mapHTML(), q:"“The office is on the right of the path, between the shop (G) and the building in the far corner.”", o:["D","E","B"], a:1, keep:true, w:"Right side, between G and C = E."},
-    {q:"Which way is clockwise?", o:["↻","↺"], a:0, keep:true, w:"Clockwise = the way a clock's hands move ↻."}]}
+   drill:BANK.map}
 ];
 const R = {SPELL:0, S:1, TRICK:2, DIFF:3, LOST:4, WORDS:5, NEW:6, FAST:7, MAP:8};
 const BANDS = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4]];
@@ -563,7 +759,7 @@ const KINDS = {
 };
 
 /* ---------- state ---------- */
-const blank = () => ({mistakes:[], scores:[], seenWelcome:false, xp:0, days:[], best:{}});
+const blank = () => ({mistakes:[], scores:[], seenWelcome:false, xp:0, days:[], best:{}, seen:{}});
 let state = blank();
 function load(){
   try{
@@ -755,7 +951,17 @@ $("detClose").onclick = () => $("det").close();
 /* ---------- practice games ---------- */
 const shuffle = a => { for (let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
 let dr = {};
-function openDrill(i){ dr = {i, items: shuffle(REASONS[i].drill.slice()).slice(0,3), n:0, ok:0}; showDrillQ(); if (!$("drill").open) $("drill").showModal(); }
+// pick 3 questions the student hasn't seen yet; start over only when all are used
+function pickItems(i, n = 3){
+  const pool = REASONS[i].drill, all = pool.map((_,k)=>k);
+  let seen = (state.seen[i] || []).filter(k => k < pool.length);
+  let fresh = shuffle(all.filter(k => !seen.includes(k)));
+  if (fresh.length < n){ const rest = shuffle(all.filter(k => !fresh.includes(k))); fresh = fresh.concat(rest); seen = []; }
+  const pick = fresh.slice(0, n);
+  state.seen[i] = seen.concat(pick); save();
+  return pick.map(k => pool[k]);
+}
+function openDrill(i){ dr = {i, items: pickItems(i), n:0, ok:0}; showDrillQ(); if (!$("drill").open) $("drill").showModal(); }
 function showDrillQ(){
   const it = dr.items[dr.n], order = it.keep ? it.o.map((_,k)=>k) : shuffle(it.o.map((_,k)=>k));
   const three = it.o.length >= 3 || it.o.every(o => o.length <= 6);
